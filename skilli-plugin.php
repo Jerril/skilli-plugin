@@ -153,48 +153,49 @@ function skilli_generate_mb($mb){
 	}
 }
 
-// keeping track of groups
-$grpName = "";
-$grpValue = "";
-$level = 0;
+// set meta_keys for groups
+$metaKey = "";
+
 
 // create & display mb fields
 function skilli_generate_fields($post, $mb_data){
-	global $grpName, $grpValue;
+	global $metaKey;
+
 	$fields = $mb_data['args'];
 
 	foreach($fields as $field){
+		// set meta_key for group
+		if($field['type'] === 'group'){
+			$metaKey = $field['id'];
+		}
+
 		// generate the field html and setup
 		skilli_generate_html($post, $field);
 
-		// set grp parameters back to default
-		if($field['type'] == 'group'){
-			$grpName = "";
-			$grpValue = "";
-			$level = 0;
-		}
+		// reset the keys
+		$metaKey = "";
+
 	}
 }
 
+
 // generate html
-function skilli_generate_html($post, $field, $metaKey = null, $index = null){
-	global $grpName;
-	global $grpValue;
-	global $level;
+function skilli_generate_html($post, $field, $parent=null, $index=null){
+	global $metaKey;
 
 	// get the post_meta for all the field
 	if($metaKey){
 		$value = get_post_meta($post->ID, $metaKey, true);
-		// $namePrefix = $metaKey."[".$index."]";
 	}else {
 		$value = get_post_meta($post->ID, $field['id'], true);
 	}
+
 	if($field['type'] === 'text'){ ?>
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<?php if($metaKey){ ?>
-						<input type="text" name="<?php echo $grpName."[".$field['id']."]"; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+					<?php if($parent){ ?>
+						<input type="text" name="<?php echo $parent."[".$field['id']."]"; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
 					<?php } else{ ?>
 						<input type="text" name="<?php echo $field['id']; ?>" value="<?php if(isset($value)) echo $value; ?>" />
 					<?php } ?>
@@ -297,6 +298,7 @@ function skilli_generate_html($post, $field, $metaKey = null, $index = null){
 			    <div><label for=""><?php echo $field['name']; ?></label></div>
 			    <div>
 			    	<select class="fields" name="<?php echo $field['id']; ?>">
+			    		<option value="">Select an Item</option>
 			    		<?php foreach($field['options'] as $op){ ?>
 			    			<option value="<?php echo $op; ?>" <?php if($value == $op) echo 'selected'; ?> ><?php echo $op; ?></option>
 			    		<?php } ?>
@@ -317,7 +319,7 @@ function skilli_generate_html($post, $field, $metaKey = null, $index = null){
 			<div><label for=""><?php echo $field['name']; ?></label></div>
 		    <div>
 		    	<select class="fields" name="<?php echo $field['id']; ?>">
-		    		<option value="">...select...</option>
+		    		<option value="">Select an Item</option>
 		    		<?php foreach(get_posts(array('post_type' => $field['post_type'])) as $op){ ?>
 		    			<option value="<?php echo $op->post_title; ?>" <?php if($value == $op->post_title) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
 		    		<?php } ?>
@@ -334,57 +336,190 @@ function skilli_generate_html($post, $field, $metaKey = null, $index = null){
 			</div>
 		</div>	
 	<?php }
-	if($field['type'] === 'group'){ 
-		$level += 1;
-	?>
+	if($field['type'] === 'group'){ ?>
 		<div class="field">
-			<div><label for=""><?php echo $field['name']; ?></label></div>
+			<div><label for=""><?php echo $field['name']; ?>x</label></div>
 			<div class="group">
-				<?php for($i=0; $i<$field['clone']; $i++){
+				<?php
+					for($i=0; $i<count($value); $i++){
+					 
 					$groupfields = $field['fields']; ?>
 					<div class="grp-cards">
 						<label class="entry">Entry <?php echo $i+1; ?></label>
 						<div class="grp-fields">
 							<?php
-								// switch($level){
-								// 	case 1: $grpName = $field['id']."[".$i."]"; break;
-								// 	case 2: $grpName .= "[" . $field['id']. "]". "[".$i."]"; break;
-								// 	default: $grpName = $field['id']."[".$i."]";
-								// }
-
 								foreach($groupfields as $fld){
-									// skilli_generate_html($post, $fld, $field['id'], $i);
-									$metaKey = $field['id'];
-									$parent = $metaKey."[".$i."]";
-									skilli_generate_group_html($post, $fld, $metaKey, $parent);
+									// $parent = $metaKey."[".$i."]";
+									// $parent = $field['id']."[".$i."]";
+									// skilli_generate_html($post, $fld, $parent);
+									skilli_generate_group_html($post, $fld, $field['id'], $i);
 								}
 							?>
 						</div>
 					</div>
 				<?php 
 			} ?>
+			<button class="add-more" data-field="<?php echo $field['id']; ?>" >+ Add More</button>
 			</div>
 		</div>
 	<?php }
 }
 
-function skilli_generate_group_html($post, $field, $meta_key, $parent) {
-	$value = get_post_meta($post->ID, $meta_key, true);
-	if($field['type'] == 'text') { 
-		$fld_name = $parent."[".$field['id']."]";
-	?>
+function skilli_generate_group_html($post, $field, $parent, $index) {
+	global $metaKey;
+
+	$value = get_post_meta($post->ID, $metaKey, true);
+	
+	$prevFieldId = $field['id'];
+	$fld_name = $parent."[".$index."]"."[".$field['id']."]";
+	
+	if($field['type'] === 'text'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="text" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'number'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="number" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'password'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="passsword" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'email'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="email" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'url'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="url" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'color'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="color" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+				</div>
+			</div>
+	<?php }
+	if($field['type'] === 'date'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+			    	<input type="date" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+				</div>
+			</div>
+	<?php }
+	if($field['type'] === 'datetime'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+			    <div>
+			    	<input type="datetime-local" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+			    </div>
+			</div>
+	<?php }
+	if($field['type'] === 'time'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+			    <div>
+			    	<input type="time" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+			    </div>
+			</div>
+	<?php }
+	if($field['type'] === 'textarea'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<textarea name="<?php echo $fld_name; ?>"><?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?></textarea>
+				</div>
+			</div>
+	<?php }
+	if($field['type'] === 'radio'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+		    	<div class="fields">
+		    		<?php foreach($field['options'] as $op){ ?>
+			    		<label><?php echo $op; ?>
+			    			<input type="radio" name="<?php echo $fld_name; ?>" value="<?php echo $op; ?>" <?php if($value[$index][$field['id']] == $op) echo 'checked'; ?>/></label>
+		    		<?php } ?>
+		    	</div>			    	
+			</div>
+	<?php }
+	if($field['type'] === 'checkbox'){ ?>
 		<div class="field">
 			<div><label for=""><?php echo $field['name']; ?></label></div>
 			<div>
-				<input type="text" name="<?php echo $fld_name; ?>" value="" />
+				<input type="checkbox" name="<?php echo $fld_name; ?>" value="<?php echo $field['id']; ?>" <?php  if ( isset ( $value[$index][$field['id']] ) ) checked( $value[$index][$field['id']], $field['id'] ); ?> />
 			</div>
 		</div>
+	<?php }
+	if($field['type'] === 'select'){ ?>
+			<div class="field">
+			    <div><label for=""><?php echo $field['name']; ?></label></div>
+			    <div>
+			    	<select class="fields" name="<?php echo $fld_name; ?>">
+			    		<option value="">Select an Item</option>
+			    		<?php foreach($field['options'] as $op){ ?>
+			    			<option value="<?php echo $op; ?>" <?php if($value[$index][$field['id']] == $op) echo 'selected'; ?>><?php echo $op; ?></option>
+			    		<?php } ?>
+			    	</select>
+			    </div>			    	
+			</div>
+	<?php }
+	if($field['type'] === 'wysiwyg'){ ?>
+		<div class="field">
+			<div><label for=""><?php echo $field['name']; ?></label></div>
+			<div>
+				<?php wp_editor($value[$index][$field['id']], $field['id']); ?>
+			</div>	
+		</div>
+	<?php }
+	if($field['type'] === 'post'){ ?>
+		<div class="field">
+			<div><label for=""><?php echo $field['name']; ?></label></div>
+		    <div>
+		    	<select class="fields" name="<?php echo $fld_name; ?>">
+		    		<option value="">Select an Item</option>
+		    		<?php foreach(get_posts(array('post_type' => $field['post_type'])) as $op){ ?>
+		    			<option value="<?php echo $op->post_title; ?>" <?php if($value[$index][$field['id']] == $op->post_title) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
+		    		<?php } ?>
+		    	</select>			    	
+		    </div>
+		</div>	
+	<?php }
+	if($field['type'] === 'image'){ ?>
+		<div class="field">
+			<div><label for="meta-image" class="prfx-row-title"><?php _e( $field['name'], 'prfx-textdomain' )?></label></div>
+			<div>
+				<input type="text" name="<?php echo $field['id']; ?>" id="meta-image" value="<?php if ( isset ( $value[$index][$field['id']] ) ) echo $value[$index][$field['id']]; ?>" />
+				<input type="button" id="meta-image-button" class="button" value="<?php _e( 'Choose or Upload an Image', 'prfx-textdomain' )?>" />
+			</div>
+		</div>	
 	<?php }
 	if($field['type'] == 'group') { ?>
 		<div class="field">
 			<div><label for=""><?php echo $field['name']; ?></label></div>
 			<div class="group">
-				<?php for($i=0; $i<$field['clone']; $i++){
+				<?php for($i=0; $i<count($value); $i++){
 					$groupfields = $field['fields']; ?>
 					<div class="grp-cards">
 						<label class="entry">Entry <?php echo $i+1; ?></label>
@@ -392,38 +527,184 @@ function skilli_generate_group_html($post, $field, $meta_key, $parent) {
 							<?php 
 								foreach($groupfields as $fld){
 									// $parent = $parent."[".$i."]";
-									$parent = $parent."[".$field['name']."]"."[".$i."]";
-									skilli_generate_group2_html($post, $fld, $metaKey, $parent);
+									// $parent = $fld_name."[".$i."]";
+									$args = array();
+									$args[0] = $parent; 
+									$args[1] = $index;
+									$args[2] = $prevFieldId;
+									// $args[] = $i;
+									$parentName = $fld_name;
+									// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
+									skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
 								}
 							?>
 						</div>
 					</div>
 				<?php } ?>
+				<button>+ Add More</button>
 			</div>
 		</div>
 	<?php }
 }
 
-function skilli_generate_group2_html($post, $field, $meta_key, $parent) {
-	$value = get_post_meta($post->ID, $meta_key, true);
-	if($field['type'] == 'text') { 
-		$fld_name = $parent."[".$field['id']."]";
-	?>
+function skilli_generate_group2_html($post, $field, $parentName, $args, $index) {
+	global $metaKey;
+
+	$value = get_post_meta($post->ID, $metaKey, true);
+	$exactValue = $value[$args[1]][$args[2]][$index][$field['id']];
+
+	$fld_name = $parentName."[".$index."]"."[".$field['id']."]";
+
+	if($field['type'] === 'text'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="text" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'number'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="number" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'password'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="passsword" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'email'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="email" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'url'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="url" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+				</div>
+			</div>
+	<?php  }
+	if($field['type'] === 'color'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<input type="color" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+				</div>
+			</div>
+	<?php }
+	if($field['type'] === 'date'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+			    	<input type="date" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+				</div>
+			</div>
+	<?php }
+	if($field['type'] === 'datetime'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+			    <div>
+			    	<input type="datetime-local" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+			    </div>
+			</div>
+	<?php }
+	if($field['type'] === 'time'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+			    <div>
+			    	<input type="time" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
+			    </div>
+			</div>
+	<?php }
+	if($field['type'] === 'textarea'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+				<div>
+					<textarea name="<?php echo $fld_name; ?>"><?php if(isset($exactValue)) echo $exactValue; ?></textarea>
+				</div>
+			</div>
+	<?php }
+	if($field['type'] === 'radio'){ ?>
+			<div class="field">
+				<div><label for=""><?php echo $field['name']; ?></label></div>
+		    	<div class="fields">
+		    		<?php foreach($field['options'] as $op){ ?>
+			    		<label><?php echo $op; ?>
+			    			<input type="radio" name="<?php echo $fld_name; ?>" value="<?php echo $op; ?>" <?php if($exactValue == $op) echo 'checked'; ?>/></label>
+		    		<?php } ?>
+		    	</div>			    	
+			</div>
+	<?php }
+	if($field['type'] === 'checkbox'){ ?>
 		<div class="field">
 			<div><label for=""><?php echo $field['name']; ?></label></div>
 			<div>
-				<input type="text" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$field['id']])) echo $value[$field['id']]; ?>" />
+				<input type="checkbox" name="<?php echo $fld_name; ?>" value="<?php echo $field['id']; ?>" <?php  if ( isset ( $exactValue ) ) checked( $exactValue, $field['id'] ); ?> />
 			</div>
 		</div>
+	<?php }
+	if($field['type'] === 'select'){ ?>
+			<div class="field">
+			    <div><label for=""><?php echo $field['name']; ?></label></div>
+			    <div>
+			    	<select class="fields" name="<?php echo $field['id']; ?>">
+			    		<option value="">Select an Item</option>
+			    		<?php foreach($field['options'] as $op){ ?>
+			    			<option value="<?php echo $op; ?>" <?php if($exactValue == $op) echo 'selected'; ?> ><?php echo $op; ?></option>
+			    		<?php } ?>
+			    	</select>
+			    </div>			    	
+			</div>
+	<?php }
+	if($field['type'] === 'wysiwyg'){ ?>
+		<div class="field">
+			<div><label for=""><?php echo $field['name']; ?></label></div>
+			<div>
+				<?php wp_editor($exactValue, $field['id']); ?>
+			</div>	
+		</div>
+	<?php }
+	if($field['type'] === 'post'){ ?>
+		<div class="field">
+			<div><label for=""><?php echo $field['name']; ?></label></div>
+		    <div>
+		    	<select class="fields" name="<?php echo $fld_name; ?>">
+		    		<option value="">Select an Item</option>
+		    		<?php foreach(get_posts(array('post_type' => $field['post_type'])) as $op){ ?>
+		    			<option value="<?php echo $op->post_title; ?>" <?php if($exactValue == $op->post_title) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
+		    		<?php } ?>
+		    	</select>			    	
+		    </div>
+		</div>	
+	<?php }
+	if($field['type'] === 'image'){ ?>
+		<div class="field">
+			<div><label for="meta-image" class="prfx-row-title"><?php _e( $field['name'], 'prfx-textdomain' )?></label></div>
+			<div>
+				<input type="text" name="<?php echo $field['id']; ?>" id="meta-image" value="<?php if ( isset ( $exactValue ) ) echo $exactValue; ?>" />
+				<input type="button" id="meta-image-button" class="button" value="<?php _e( 'Choose or Upload an Image', 'prfx-textdomain' )?>" />
+			</div>
+		</div>	
 	<?php }
 	if($field['type'] == 'group') { ?>
 		<div class="field">
 			<div><label for=""><?php echo $field['name']; ?></label></div>
 			<div class="group">
-				<?php for($i=0; $i<$field['clone']; $i++){
+				<?php for($i=0; $i<count($value); $i++){
 					$groupfields = $field['fields']; ?>
 					<div class="grp-cards">
-						<label class="entry">Entry <?php echo $i+1; ?></label>
+						<label class="entry">Entry <?php echo $i+1; ?>  <span>Remove</span></label>
 						<div class="grp-fields">
 							<?php 
 								foreach($groupfields as $fld){
@@ -434,6 +715,7 @@ function skilli_generate_group2_html($post, $field, $meta_key, $parent) {
 						</div>
 					</div>
 				<?php } ?>
+				<button>+ Add More</button>
 			</div>
 		</div>
 	<?php }
@@ -492,6 +774,8 @@ function skilli_scripts_enqueue() {
 		)
 	);
 	wp_enqueue_script( 'meta-box-image' );
+	//
+	wp_enqueue_script( 'add-metabox', plugin_dir_url( __FILE__ ) . 'js/add-metabox.js', array( 'jquery' ) );
 
 	// link css styles
 	 wp_enqueue_style( 'skilli-styles', plugin_dir_url( __FILE__ ) . 'styles/style.css' );
