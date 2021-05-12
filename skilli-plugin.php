@@ -180,7 +180,7 @@ function skilli_generate_fields($post, $mb_data){
 
 
 // generate html
-function skilli_generate_html($post, $field, $parent=null, $index=null){
+function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=null){
 	global $metaKey;
 
 	// get the post_meta for all the field
@@ -194,11 +194,7 @@ function skilli_generate_html($post, $field, $parent=null, $index=null){
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<?php if($parent){ ?>
-						<input type="text" name="<?php echo $parent."[".$field['id']."]"; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
-					<?php } else{ ?>
-						<input type="text" name="<?php echo $field['id']; ?>" value="<?php if(isset($value)) echo $value; ?>" />
-					<?php } ?>
+					<input type="text" name="<?php echo $field['id']; ?>" value="<?php if(isset($value)) echo $value; ?>" />
 				</div>
 			</div>
 	<?php  }
@@ -338,28 +334,42 @@ function skilli_generate_html($post, $field, $parent=null, $index=null){
 	<?php }
 	if($field['type'] === 'group'){ ?>
 		<div class="field">
-			<div><label for=""><?php echo $field['name']; ?>x</label></div>
+			<div><label for=""><?php echo $field['name']; ?></label></div>
 			<div class="group">
 				<?php
-					for($i=0; $i<count($value); $i++){
-					 
-					$groupfields = $field['fields']; ?>
-					<div class="grp-cards">
-						<label class="entry">Entry <?php echo $i+1; ?></label>
-						<div class="grp-fields">
-							<?php
-								foreach($groupfields as $fld){
-									// $parent = $metaKey."[".$i."]";
-									// $parent = $field['id']."[".$i."]";
-									// skilli_generate_html($post, $fld, $parent);
-									skilli_generate_group_html($post, $fld, $field['id'], $i);
-								}
-							?>
+					$groupfields = $field['fields'];
+
+					if(!$field['clone']){ ?>
+						<div class="grp-cards">
+							<div class="grp-fields">
+								<?php
+									foreach($groupfields as $fld){
+										skilli_generate_group_html($post, $fld, $field['id'], $i);
+									}
+								?>
+							</div>
 						</div>
-					</div>
-				<?php 
-			} ?>
-			<button class="add-more" data-field="<?php echo $field['id']; ?>" >+ Add More</button>
+					<?php }else{
+						$cloneCount = 1;
+						if($value){
+							$cloneCount= count($value);
+						}					
+						for($i=0; $i<$cloneCount; $i++){ ?>
+							<div class="grp-cards">
+								<label class="entry">Entry <?php echo $i+1; ?></label>
+								<div class="grp-fields">
+									<?php
+										foreach($groupfields as $fld){
+											skilli_generate_group_html($post, $fld, $field['id'], $i);
+										}
+									?>
+								</div>
+							</div>
+						<?php 
+					} ?>
+					<button class="add-more" data-id="<?php echo $field['id']; ?>">+ Add More</button>
+					<?php }
+				?>
 			</div>
 		</div>
 	<?php }
@@ -369,6 +379,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 	global $metaKey;
 
 	$value = get_post_meta($post->ID, $metaKey, true);
+	$exactValue = $value[$index][$field['id']];
 	
 	$prevFieldId = $field['id'];
 	$fld_name = $parent."[".$index."]"."[".$field['id']."]";
@@ -377,7 +388,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<input type="text" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+					<input type="text" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 				</div>
 			</div>
 	<?php  }
@@ -385,7 +396,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<input type="number" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+					<input type="number" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 				</div>
 			</div>
 	<?php  }
@@ -393,7 +404,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<input type="passsword" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+					<input type="passsword" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 				</div>
 			</div>
 	<?php  }
@@ -401,7 +412,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<input type="email" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+					<input type="email" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 				</div>
 			</div>
 	<?php  }
@@ -409,7 +420,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<input type="url" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+					<input type="url" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 				</div>
 			</div>
 	<?php  }
@@ -417,7 +428,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<input type="color" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+					<input type="color" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 				</div>
 			</div>
 	<?php }
@@ -425,7 +436,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-			    	<input type="date" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+			    	<input type="date" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 				</div>
 			</div>
 	<?php }
@@ -433,7 +444,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 			    <div>
-			    	<input type="datetime-local" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+			    	<input type="datetime-local" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 			    </div>
 			</div>
 	<?php }
@@ -441,7 +452,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 			    <div>
-			    	<input type="time" name="<?php echo $fld_name; ?>" value="<?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?>" />
+			    	<input type="time" name="<?php echo $fld_name; ?>" value="<?php if(isset($exactValue)) echo $exactValue; ?>" />
 			    </div>
 			</div>
 	<?php }
@@ -449,7 +460,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			<div class="field">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
-					<textarea name="<?php echo $fld_name; ?>"><?php if(isset($value[$index][$field['id']])) echo $value[$index][$field['id']]; ?></textarea>
+					<textarea name="<?php echo $fld_name; ?>"><?php if(isset($exactValue)) echo $exactValue; ?></textarea>
 				</div>
 			</div>
 	<?php }
@@ -459,7 +470,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 		    	<div class="fields">
 		    		<?php foreach($field['options'] as $op){ ?>
 			    		<label><?php echo $op; ?>
-			    			<input type="radio" name="<?php echo $fld_name; ?>" value="<?php echo $op; ?>" <?php if($value[$index][$field['id']] == $op) echo 'checked'; ?>/></label>
+			    			<input type="radio" name="<?php echo $fld_name; ?>" value="<?php echo $op; ?>" <?php if($exactValue == $op) echo 'checked'; ?>/></label>
 		    		<?php } ?>
 		    	</div>			    	
 			</div>
@@ -468,7 +479,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 		<div class="field">
 			<div><label for=""><?php echo $field['name']; ?></label></div>
 			<div>
-				<input type="checkbox" name="<?php echo $fld_name; ?>" value="<?php echo $field['id']; ?>" <?php  if ( isset ( $value[$index][$field['id']] ) ) checked( $value[$index][$field['id']], $field['id'] ); ?> />
+				<input type="checkbox" name="<?php echo $fld_name; ?>" value="<?php echo $field['id']; ?>" <?php  if ( isset ( $exactValue ) ) checked( $exactValue, $field['id'] ); ?> />
 			</div>
 		</div>
 	<?php }
@@ -479,7 +490,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 			    	<select class="fields" name="<?php echo $fld_name; ?>">
 			    		<option value="">Select an Item</option>
 			    		<?php foreach($field['options'] as $op){ ?>
-			    			<option value="<?php echo $op; ?>" <?php if($value[$index][$field['id']] == $op) echo 'selected'; ?>><?php echo $op; ?></option>
+			    			<option value="<?php echo $op; ?>" <?php if($exactValue == $op) echo 'selected'; ?>><?php echo $op; ?></option>
 			    		<?php } ?>
 			    	</select>
 			    </div>			    	
@@ -489,7 +500,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 		<div class="field">
 			<div><label for=""><?php echo $field['name']; ?></label></div>
 			<div>
-				<?php wp_editor($value[$index][$field['id']], $field['id']); ?>
+				<?php wp_editor($exactValue, $field['id']); ?>
 			</div>	
 		</div>
 	<?php }
@@ -500,7 +511,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 		    	<select class="fields" name="<?php echo $fld_name; ?>">
 		    		<option value="">Select an Item</option>
 		    		<?php foreach(get_posts(array('post_type' => $field['post_type'])) as $op){ ?>
-		    			<option value="<?php echo $op->post_title; ?>" <?php if($value[$index][$field['id']] == $op->post_title) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
+		    			<option value="<?php echo $op->post_title; ?>" <?php if($exactValue == $op->post_title) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
 		    		<?php } ?>
 		    	</select>			    	
 		    </div>
@@ -510,7 +521,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 		<div class="field">
 			<div><label for="meta-image" class="prfx-row-title"><?php _e( $field['name'], 'prfx-textdomain' )?></label></div>
 			<div>
-				<input type="text" name="<?php echo $field['id']; ?>" id="meta-image" value="<?php if ( isset ( $value[$index][$field['id']] ) ) echo $value[$index][$field['id']]; ?>" />
+				<input type="text" name="<?php echo $field['id']; ?>" id="meta-image" value="<?php if ( isset ( $exactValue ) ) echo $exactValue; ?>" />
 				<input type="button" id="meta-image-button" class="button" value="<?php _e( 'Choose or Upload an Image', 'prfx-textdomain' )?>" />
 			</div>
 		</div>	
@@ -519,29 +530,50 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 		<div class="field">
 			<div><label for=""><?php echo $field['name']; ?></label></div>
 			<div class="group">
-				<?php for($i=0; $i<count($value); $i++){
-					$groupfields = $field['fields']; ?>
-					<div class="grp-cards">
-						<label class="entry">Entry <?php echo $i+1; ?></label>
-						<div class="grp-fields">
-							<?php 
-								foreach($groupfields as $fld){
-									// $parent = $parent."[".$i."]";
-									// $parent = $fld_name."[".$i."]";
-									$args = array();
-									$args[0] = $parent; 
-									$args[1] = $index;
-									$args[2] = $prevFieldId;
-									// $args[] = $i;
-									$parentName = $fld_name;
-									// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
-									skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
-								}
-							?>
+				<?php
+					$groupfields = $field['fields'];
+
+					// set the parameters
+					$args = array();
+					$args[0] = $parent; 
+					$args[1] = $index;
+					$args[2] = $prevFieldId;
+					// $args[] = $i;
+					$parentName = $fld_name;
+
+					if(!$field['clone']){ ?>
+						<div class="grp-cards">
+							<div class="grp-fields">
+								<?php 
+									foreach($groupfields as $fld){
+										// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
+										skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
+									}
+								?>
+							</div>
 						</div>
-					</div>
-				<?php } ?>
-				<button>+ Add More</button>
+					<?php }else{
+						$cloneCount = 1;
+						if($exactValue){
+							$cloneCount= count($exactValue);
+						}					
+						for($i=0; $i<$cloneCount;  $i++){ ?>
+							<div class="grp-cards">
+								<label class="entry">Entry <?php echo $i+1; ?></label>
+								<div class="grp-fields">
+									<?php
+										// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
+										foreach($groupfields as $fld){
+											skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
+										}
+									?>
+								</div>
+							</div>
+							<?php 
+						} ?>
+						<button class="add-more one" data-id="<?php echo $field['id']; ?>">+ Add More</button>
+					<?php }
+				?>
 			</div>
 		</div>
 	<?php }
@@ -658,7 +690,7 @@ function skilli_generate_group2_html($post, $field, $parentName, $args, $index) 
 			<div class="field">
 			    <div><label for=""><?php echo $field['name']; ?></label></div>
 			    <div>
-			    	<select class="fields" name="<?php echo $field['id']; ?>">
+			    	<select class="fields" name="<?php echo $fld_name; ?>">
 			    		<option value="">Select an Item</option>
 			    		<?php foreach($field['options'] as $op){ ?>
 			    			<option value="<?php echo $op; ?>" <?php if($exactValue == $op) echo 'selected'; ?> ><?php echo $op; ?></option>
@@ -692,7 +724,7 @@ function skilli_generate_group2_html($post, $field, $parentName, $args, $index) 
 		<div class="field">
 			<div><label for="meta-image" class="prfx-row-title"><?php _e( $field['name'], 'prfx-textdomain' )?></label></div>
 			<div>
-				<input type="text" name="<?php echo $field['id']; ?>" id="meta-image" value="<?php if ( isset ( $exactValue ) ) echo $exactValue; ?>" />
+				<input type="text" name="<?php echo $fld_name; ?>" id="meta-image" value="<?php if ( isset ( $exactValue ) ) echo $exactValue; ?>" />
 				<input type="button" id="meta-image-button" class="button" value="<?php _e( 'Choose or Upload an Image', 'prfx-textdomain' )?>" />
 			</div>
 		</div>	
@@ -789,3 +821,8 @@ register_activation_hook( __FILE__, array($skilliPlugin, 'activate') );
 
 // deactivation
 register_deactivation_hook( __FILE__, array($skilliPlugin, 'deactivate') );
+
+?>
+<!-- <script>
+	function 
+</script> -->

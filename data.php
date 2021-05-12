@@ -164,7 +164,7 @@
 					'id' => 'lesson_topic',
 					'type' => 'group',
 					'name' => esc_html__( 'Add Topic', 'text-domain' ),
-					'clone' => 5,
+					'clone' => 1,
 					'fields' => array(
 						array (
 							'id' => 'topic_id',
@@ -383,7 +383,7 @@
 					'id' => 'add_item_group',
 					'type' => 'group',
 					'name' => esc_html__( 'Add Item', 'text-domain' ),
-					'clone' => 4,
+					'clone' => 1,
 					'fields' => array(
 						array (
 							'id' => 'item_type',
@@ -450,7 +450,7 @@
 							'id' => 'add_lesson_group',
 							'type' => 'group',
 							'name' => esc_html__( 'Add Lesson', 'text-domain' ),
-							'clone' => 2,
+							'clone' => 1,
 							'fields' => array(
 								array (
 									'id' => 'lesson_label',
@@ -565,7 +565,7 @@
 					'id' => 'first_group',
 					'name' => 'First Group',
 					'type' => 'group',
-					'clone' => 2,
+					'clone' => 1,
 					'fields' => array(
 						array(
 				 			'id' => 'greeting',
@@ -573,10 +573,21 @@
 							'type' => 'text'
 						),
 						array(
+				 			'id' => 'guest_email',
+				 			'name' => 'Guest Email',
+							'type' => 'email'
+						),
+						array(
+							'id' => 'education_higher',
+							'name' => 'Education (primary)',
+							'type' => 'select',
+							'options' => array('bsc', 'ond', 'hnd')
+						),
+						array(
 				 			'id' => 'meme_group',
 				 			'name' => 'Meme Group',
 							'type' => 'group',
-							'clone' => 2,
+							'clone' => 1,
 							'fields' => array(
 								array(
 						 			'id' => 'message',
