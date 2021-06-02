@@ -27,8 +27,16 @@
 	border-color: #ccc;
 }
 
+.field textarea {
+	border-color: #ccc;
+}
+
 .field input, .field select, .field textarea {
 	border-radius: 0;
+}
+
+.field input[type="radio"]{
+	border-radius: 50%;
 }
 
 .grp-cards{
@@ -43,11 +51,29 @@
 	padding: .3rem 15px;
 }
 
-.grp-fields{
+.grp-field, .grp-fields{
 	padding: .7rem .5rem;
+}
+
+.grp-fields{
+	display: none;
+}
+
+.grp-fields.open{
+	display: block;
 }
 
 body#tinymce {
 	background-color: #fff;
 }
 
+.red {
+	color: #a00;
+}
+
+.remove {
+	background: transparent;
+	border: 0;
+	outline: 0;
+	font-size: 12px;
+}

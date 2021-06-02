@@ -190,8 +190,10 @@ function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=n
 		$value = get_post_meta($post->ID, $field['id'], true);
 	}
 
+	// if(isset($field['visible'])) echo (get_post_meta($post->ID, $field['visible']['when'][0][0], true) != $field['visible']['when'][0][2])?'display:none':'display:inline';
+
 	if($field['type'] === 'text'){ ?>
-			<div class="field">
+			<div class="field" style="<?php if(isset($field['visible'])) echo (get_post_meta($post->ID, $field['visible']['when'][0][0], true) != $field['visible']['when'][0][2])?'display:none':'display:block'; ?>">
 				<div><label for=""><?php echo $field['name']; ?></label></div>
 				<div>
 					<input type="text" name="<?php echo $field['id']; ?>" value="<?php if(isset($value)) echo $value; ?>" />
@@ -332,6 +334,15 @@ function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=n
 			</div>
 		</div>	
 	<?php }
+	if($field['type'] === 'audio'){ ?>
+		<div class="field">
+			<div><label for="meta-audio" class="prfx-row-title"><?php _e( $field['name'], 'prfx-textdomain' )?></label></div>
+			<div>
+				<input type="text" name="<?php echo $field['id']; ?>" id="meta-audio" value="<?php if ( isset ( $value ) ) echo $value; ?>" />
+				<input type="button" id="meta-audio-button" class="button" value="<?php _e( 'Choose or Attach an Audio', 'prfx-textdomain' )?>" />
+			</div>
+		</div>	
+	<?php }
 	if($field['type'] === 'group'){ ?>
 		<div class="field">
 			<div><label for=""><?php echo $field['name']; ?></label></div>
@@ -341,7 +352,7 @@ function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=n
 
 					if(!$field['clone']){ ?>
 						<div class="grp-cards">
-							<div class="grp-fields">
+							<div class="grp-field">
 								<?php
 									foreach($groupfields as $fld){
 										skilli_generate_group_html($post, $fld, $field['id'], $i);
@@ -356,7 +367,7 @@ function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=n
 						}					
 						for($i=0; $i<$cloneCount; $i++){ ?>
 							<div class="grp-cards">
-								<label class="entry">Entry <?php echo $i+1; ?></label>
+								<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone'  data-postid="<?php echo $post->ID ?>" data-metakey="<?php echo $field['id'] ?>" data-index="<?php echo $i ?>">Remove</button></label>
 								<div class="grp-fields">
 									<?php
 										foreach($groupfields as $fld){
@@ -379,7 +390,14 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 	global $metaKey;
 
 	$value = get_post_meta($post->ID, $metaKey, true);
-	$exactValue = $value[$index][$field['id']];
+
+	$exactValue = "";
+	if($value[$index]){
+		$exactValue = $value[$index][$field['id']];
+	}
+	// if($value[$index][$field['id']]){
+	// 	$exactValue = $value[$index][$field['id']];
+	// }
 	
 	$prevFieldId = $field['id'];
 	$fld_name = $parent."[".$index."]"."[".$field['id']."]";
@@ -543,7 +561,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 
 					if(!$field['clone']){ ?>
 						<div class="grp-cards">
-							<div class="grp-fields">
+							<div class="grp-field">
 								<?php 
 									foreach($groupfields as $fld){
 										// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
@@ -559,7 +577,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 						}					
 						for($i=0; $i<$cloneCount;  $i++){ ?>
 							<div class="grp-cards">
-								<label class="entry">Entry <?php echo $i+1; ?></label>
+								<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone' data-postid="<?php echo $post->ID; ?>" data-metakey="<?php echo $parent ?>" data-index="<?php echo $index; ?>" data-key2="<?php echo $field['id']; ?>" data-index2="<?php echo $i; ?>" >Remove</button></label>
 								<div class="grp-fields">
 									<?php
 										// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
@@ -571,7 +589,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 							</div>
 							<?php 
 						} ?>
-						<button class="add-more one" data-id="<?php echo $field['id']; ?>">+ Add More</button>
+						<button class="add-more" data-level="one" data-id="<?php echo $field['id']; ?>">+ Add More</button>
 					<?php }
 				?>
 			</div>
@@ -583,7 +601,12 @@ function skilli_generate_group2_html($post, $field, $parentName, $args, $index) 
 	global $metaKey;
 
 	$value = get_post_meta($post->ID, $metaKey, true);
-	$exactValue = $value[$args[1]][$args[2]][$index][$field['id']];
+
+	$exactValue = "";
+	if($value[$args[1]]){
+		$exactValue = $value[$args[1]][$args[2]][$index][$field['id']];
+	}
+	// $exactValue = $value[$args[1]][$args[2]][$index][$field['id']];
 
 	$fld_name = $parentName."[".$index."]"."[".$field['id']."]";
 
@@ -736,7 +759,7 @@ function skilli_generate_group2_html($post, $field, $parentName, $args, $index) 
 				<?php for($i=0; $i<count($value); $i++){
 					$groupfields = $field['fields']; ?>
 					<div class="grp-cards">
-						<label class="entry">Entry <?php echo $i+1; ?>  <span>Remove</span></label>
+						<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone'>Remove</button></label>
 						<div class="grp-fields">
 							<?php 
 								foreach($groupfields as $fld){
@@ -765,14 +788,20 @@ function skilli_save_mb_values($post_id, $post, $update) {
 			// get the fields for the mb where current post-type is found
 			$mb_flds = $mb['fields'];
 			foreach($mb_flds as $mb_fld){
-				// check for group fieldType
-				// save those fields
 				if(array_key_exists($mb_fld['id'], $_POST)){
 					update_post_meta(
 						$post_id,
 						$mb_fld['id'],
 						$_POST[$mb_fld['id']]
 					);
+				}else{
+					if($mb_fld['type'] === "checkbox"){
+						update_post_meta(
+							$post_id,
+							$mb_fld['id'],
+							''
+						);	
+					}
 				}
 			}
 		}
@@ -780,7 +809,8 @@ function skilli_save_mb_values($post_id, $post, $update) {
 
 	// die(print_r($_POST));
 }
-
+// save metabox fields value
+add_action('save_post', 'skilli_save_mb_values', 10, 3);
 
 // create the metaboxes
 foreach($metaboxes as $mb){
@@ -789,10 +819,6 @@ foreach($metaboxes as $mb){
 				function() use ($mb) {
 					return skilli_generate_mb($mb); });
 }
-
-// save metabox fields value
-add_action('save_post', 'skilli_save_mb_values', 10, 3);
-
 
 function skilli_scripts_enqueue() {
 	wp_enqueue_media();
@@ -806,13 +832,62 @@ function skilli_scripts_enqueue() {
 		)
 	);
 	wp_enqueue_script( 'meta-box-image' );
-	//
-	wp_enqueue_script( 'add-metabox', plugin_dir_url( __FILE__ ) . 'js/add-metabox.js', array( 'jquery' ) );
+
+	// metabox add & remove 
+	wp_enqueue_script( 'add-metabox', plugin_dir_url( __FILE__ ) . 'js/add-metabox.js', array( 'jquery' ), '1.0.0', true );
+	wp_localize_script(
+        'add-metabox',
+        'my_ajax_obj',
+        array(
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce' => wp_create_nonce( 'title_example' ),
+        )
+    );
 
 	// link css styles
 	 wp_enqueue_style( 'skilli-styles', plugin_dir_url( __FILE__ ) . 'styles/style.css' );
 }
 add_action( 'admin_enqueue_scripts', 'skilli_scripts_enqueue' );
+
+// remove clone hook - ajax hook
+add_action('wp_ajax_removeclone', 'ajax_removeclone');
+function ajax_removeclone() {
+	// handle ajax request here
+	check_ajax_referer( 'title_example' );
+
+	//
+	$postid = isset($_POST['postid'])?$_POST['postid']:'';
+	$metakey = isset($_POST['metakey'])?$_POST['metakey']:'';
+	$index = isset($_POST['index'])?$_POST['index']:'';
+	$key2 = isset($_POST['key2'])?$_POST['key2']:'';
+	$index2 = isset($_POST['index2'])?$_POST['index2']:'';
+
+
+	$data = get_post_meta($postid, $metakey, true);
+
+	if(empty($key2)){
+		if($data[$index]){
+			unset($data[$index]);	
+			$data = array_values($data);
+			update_post_meta($postid, $metakey, $data);
+		}
+	}else{
+		if($data[$index][$key2][$index2]){
+			unset($data[$index][$key2][$index2]);
+			$newArr = $data[$index][$key2];
+			$newArr = array_values($newArr);
+			$data[$index][$key2] = $newArr;
+			update_post_meta($postid, $metakey, $data);
+		}
+	}
+	
+
+	//
+	print_r($data);
+
+	//
+	wp_die(); // All ajax requests die when finished
+}
 
 
 
@@ -823,6 +898,3 @@ register_activation_hook( __FILE__, array($skilliPlugin, 'activate') );
 register_deactivation_hook( __FILE__, array($skilliPlugin, 'deactivate') );
 
 ?>
-<!-- <script>
-	function 
-</script> -->
