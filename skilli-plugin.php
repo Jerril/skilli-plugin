@@ -184,11 +184,12 @@ function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=n
 	global $metaKey;
 
 	// get the post_meta for all the field
-	if($metaKey){
-		$value = get_post_meta($post->ID, $metaKey, true);
-	}else {
-		$value = get_post_meta($post->ID, $field['id'], true);
-	}
+	// if($metaKey){
+	// 	$value = get_post_meta($post->ID, $metaKey, true);
+	// }else {
+	// 	$value = get_post_meta($post->ID, $field['id'], true);
+	// }
+	$value = get_post_meta($post->ID, $field['id'], true);
 
 	// if(isset($field['visible'])) echo (get_post_meta($post->ID, $field['visible']['when'][0][0], true) != $field['visible']['when'][0][2])?'display:none':'display:inline';
 
@@ -319,7 +320,7 @@ function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=n
 		    	<select class="fields" name="<?php echo $field['id']; ?>">
 		    		<option value="">Select an Item</option>
 		    		<?php foreach(get_posts(array('post_type' => $field['post_type'])) as $op){ ?>
-		    			<option value="<?php echo $op->post_title; ?>" <?php if($value == $op->post_title) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
+		    			<option value="<?php echo $op->ID; ?>" <?php if($value == $op->ID) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
 		    		<?php } ?>
 		    	</select>			    	
 		    </div>
@@ -331,15 +332,6 @@ function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=n
 			<div>
 				<input type="text" name="<?php echo $field['id']; ?>" id="meta-image" value="<?php if ( isset ( $value ) ) echo $value; ?>" />
 				<input type="button" id="meta-image-button" class="button" value="<?php _e( 'Choose or Upload an Image', 'prfx-textdomain' )?>" />
-			</div>
-		</div>	
-	<?php }
-	if($field['type'] === 'audio'){ ?>
-		<div class="field">
-			<div><label for="meta-audio" class="prfx-row-title"><?php _e( $field['name'], 'prfx-textdomain' )?></label></div>
-			<div>
-				<input type="text" name="<?php echo $field['id']; ?>" id="meta-audio" value="<?php if ( isset ( $value ) ) echo $value; ?>" />
-				<input type="button" id="meta-audio-button" class="button" value="<?php _e( 'Choose or Attach an Audio', 'prfx-textdomain' )?>" />
 			</div>
 		</div>	
 	<?php }
@@ -361,23 +353,44 @@ function skilli_generate_html($post, $field, $clone=null, $parent=null, $index=n
 							</div>
 						</div>
 					<?php }else{
-						$cloneCount = 1;
-						if($value){
-							$cloneCount= count($value);
-						}					
-						for($i=0; $i<$cloneCount; $i++){ ?>
-							<div class="grp-cards">
-								<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone'  data-postid="<?php echo $post->ID ?>" data-metakey="<?php echo $field['id'] ?>" data-index="<?php echo $i ?>">Remove</button></label>
-								<div class="grp-fields">
-									<?php
-										foreach($groupfields as $fld){
-											skilli_generate_group_html($post, $fld, $field['id'], $i);
-										}
-									?>
+						if($value && count($value) >= 1){
+							// $cloneCount=count($value);
+							// use for-each
+							$i = 0;
+							foreach($value as $index => $item){ ?>
+								<div class="grp-cards" data-index=<?php echo $index; ?>>
+									<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone'  data-postid="<?php echo $post->ID ?>" data-metakey="<?php echo $field['id'] ?>" data-index="<?php echo $index; ?>">Remove</button></label>
+									<div class="grp-fields">
+										<?php
+											foreach($groupfields as $fld){
+												skilli_generate_group_html($post, $fld, $field['id'], $index);
+											}
+										?>
+									</div>
 								</div>
-							</div>
-						<?php 
-					} ?>
+
+							<?php 
+							// increment i
+							$i++;
+						}
+						}else{
+							$cloneCount = 1;
+							// use for-loop
+							for($i=0; $i<$cloneCount; $i++){ ?>
+								<div class="grp-cards"  data-index=<?php echo $i; ?>>
+									<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone'  data-postid="<?php echo $post->ID ?>" data-metakey="<?php echo $field['id'] ?>" data-index="<?php echo $i ?>">Remove</button></label>
+									<div class="grp-fields">
+										<?php
+											foreach($groupfields as $fld){
+												skilli_generate_group_html($post, $fld, $field['id'], $i);
+											}
+										?>
+									</div>
+								</div>
+							<?php 
+							}
+						} ?>					
+						
 					<button class="add-more" data-id="<?php echo $field['id']; ?>">+ Add More</button>
 					<?php }
 				?>
@@ -529,7 +542,7 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 		    	<select class="fields" name="<?php echo $fld_name; ?>">
 		    		<option value="">Select an Item</option>
 		    		<?php foreach(get_posts(array('post_type' => $field['post_type'])) as $op){ ?>
-		    			<option value="<?php echo $op->post_title; ?>" <?php if($exactValue == $op->post_title) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
+		    			<option value="<?php echo $op->ID; ?>" <?php if($exactValue == $op->ID) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
 		    		<?php } ?>
 		    	</select>			    	
 		    </div>
@@ -571,23 +584,43 @@ function skilli_generate_group_html($post, $field, $parent, $index) {
 							</div>
 						</div>
 					<?php }else{
-						$cloneCount = 1;
-						if($exactValue){
-							$cloneCount= count($exactValue);
-						}					
-						for($i=0; $i<$cloneCount;  $i++){ ?>
-							<div class="grp-cards">
-								<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone' data-postid="<?php echo $post->ID; ?>" data-metakey="<?php echo $parent ?>" data-index="<?php echo $index; ?>" data-key2="<?php echo $field['id']; ?>" data-index2="<?php echo $i; ?>" >Remove</button></label>
-								<div class="grp-fields">
-									<?php
-										// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
-										foreach($groupfields as $fld){
-											skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
-										}
-									?>
+						if($exactValue && count($exactValue) >= 1){
+							// $cloneCount=count($value);
+							// use for-each
+							$i = 0;
+							foreach($exactValue as $index2 => $item){ ?>
+								<div class="grp-cards"  data-index=<?php echo $index2; ?>>
+									<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone' data-postid="<?php echo $post->ID; ?>" data-metakey="<?php echo $parent ?>" data-index="<?php echo $index; ?>" data-key2="<?php echo $field['id']; ?>" data-index2="<?php echo $index2; ?>" >Remove</button></label>
+									<div class="grp-fields">
+										<?php
+											// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
+											foreach($groupfields as $fld){
+												skilli_generate_group2_html($post, $fld, $parentName, $args, $index2);
+											}
+										?>
+									</div>
 								</div>
-							</div>
 							<?php 
+							// increment i
+							$i++;
+						}
+						}else{
+							$cloneCount = 1;
+							// use for-loop
+							for($i=0; $i<$cloneCount; $i++){ ?>
+								<div class="grp-cards"  data-index=<?php echo $i; ?>>
+									<label class="entry">Entry <?php echo $i+1; ?> <button class='remove red remove-clone' data-postid="<?php echo $post->ID; ?>" data-metakey="<?php echo $parent ?>" data-index="<?php echo $index; ?>" data-key2="<?php echo $field['id']; ?>" data-index2="<?php echo $i; ?>" >Remove</button></label>
+									<div class="grp-fields">
+										<?php
+											// skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
+											foreach($groupfields as $fld){
+												skilli_generate_group2_html($post, $fld, $parentName, $args, $i);
+											}
+										?>
+									</div>
+								</div>
+							<?php 
+							}
 						} ?>
 						<button class="add-more" data-level="one" data-id="<?php echo $field['id']; ?>">+ Add More</button>
 					<?php }
@@ -737,7 +770,7 @@ function skilli_generate_group2_html($post, $field, $parentName, $args, $index) 
 		    	<select class="fields" name="<?php echo $fld_name; ?>">
 		    		<option value="">Select an Item</option>
 		    		<?php foreach(get_posts(array('post_type' => $field['post_type'])) as $op){ ?>
-		    			<option value="<?php echo $op->post_title; ?>" <?php if($exactValue == $op->post_title) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
+		    			<option value="<?php echo $op->ID; ?>" <?php if($exactValue == $op->ID) echo 'selected'; ?>><?php echo $op->post_title; ?></option>
 		    		<?php } ?>
 		    	</select>			    	
 		    </div>
@@ -867,16 +900,36 @@ function ajax_removeclone() {
 
 	if(empty($key2)){
 		if($data[$index]){
-			unset($data[$index]);	
-			$data = array_values($data);
+			// $newArr = $data;
+			unset($data[$index]);
+
+			// reorder the array values
+			// $newData = array();
+
+			// foreach($newArr as $item){
+			// 	array_push($newData, $item);
+			// }	
+			// $data = array_values($data);
+			// $data = sort($data);
+
+			// debugging
+			// echo "<script>console.log('A group removed');</script>";
+			// debugging
+
 			update_post_meta($postid, $metakey, $data);
+			// $data = get_post_meta($postid, $metakey, true);
 		}
 	}else{
 		if($data[$index][$key2][$index2]){
 			unset($data[$index][$key2][$index2]);
-			$newArr = $data[$index][$key2];
-			$newArr = array_values($newArr);
-			$data[$index][$key2] = $newArr;
+			// $newArr = $data[$index][$key2];
+			// $newArr = array_values($newArr);
+
+			// debugging
+			// debugging
+
+			// $data[$index][$key2] = $newArr;
+			// $data = $newArr;
 			update_post_meta($postid, $metakey, $data);
 		}
 	}

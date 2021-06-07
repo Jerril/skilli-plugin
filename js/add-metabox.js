@@ -28,7 +28,8 @@ jQuery(document).ready(function($) {
 		e.stopPropagation();
 
 		// get the next index
-		var index = $(this).siblings().length;
+		var outerIndex = $(this).siblings().length;
+		var index = parseInt($(this).prev().data('index'));
 
 		// group id
 		var id = $(this).data('id');
@@ -48,19 +49,19 @@ jQuery(document).ready(function($) {
 
 		// manipulate new div
 		newDiv = newDiv.html();
-		newDiv = newDiv.replace(`Entry ${index}`, `Entry ${index + 1}`);
+		newDiv = newDiv.replace(`Entry ${outerIndex}`, `Entry ${outerIndex + 1}`);
 
 		// updating the index name
 		if($(this).data('level')){
-			newDiv = newDiv.replaceAll(`[${id}][${index-1}]`, `[${id}][${index}]`);
-			newDiv = newDiv.replace(`data-index2="${index-1}"`, `data-index2="${index}"`);
+			newDiv = newDiv.replaceAll(`[${id}][${index}]`, `[${id}][${index+1}]`);
+			newDiv = newDiv.replace(`data-index2="${index}"`, `data-index2="${index+1}"`);
 		}else{
-			newDiv = newDiv.replaceAll(`${id}[${index-1}]`, `${id}[${index}]`);
-			newDiv = newDiv.replaceAll(`data-index="${index-1}"`, `data-index="${index}"`);
-			newDiv = newDiv.replace(`data-index="${index-1}"`, `data-index="${index}"`);
+			newDiv = newDiv.replaceAll(`${id}[${index}]`, `${id}[${index+1}]`);
+			newDiv = newDiv.replaceAll(`data-index="${index}"`, `data-index="${index+1}"`);
+			newDiv = newDiv.replace(`data-index="${index}"`, `data-index="${index+1}"`);
 		}	
 
-		newDiv = `<div class="grp-cards">${newDiv}</div>`;
+		newDiv = `<div class="grp-cards" data-index="${index+1}">${newDiv}</div>`;
 		
 		$(this).before(newDiv);
  
